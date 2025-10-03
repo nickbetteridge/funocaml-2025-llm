@@ -1,4 +1,4 @@
-open Rune
+(* open Rune *)
 open Kaun
 
 let load_names path = Saga.read_lines path |> List.map String.lowercase_ascii
@@ -27,7 +27,7 @@ let build_vocab (names : string list) =
 
 let make_dataset ~block_size ~batch_size ~vocab_size:_ ~encode names =
   let tokenize s = encode ("." ^ s ^ ".") in
-  Dataset.sliding_window ~block_size ~tokenize ~device:c names
+  Dataset.sliding_window ~block_size ~tokenize names
   |> Dataset.batch batch_size
   |> Dataset.shuffle ~buffer_size:200
 

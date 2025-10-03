@@ -37,7 +37,7 @@ let build_vocab (names : string list) : vocab =
 (* Build a dataset of (context, next) pairs using the high-level API. *)
 let make_dataset ~block_size ~batch_size ~(v : vocab) names =
   let tokenize s = v.encode ("." ^ s ^ ".") in
-  Dataset.sliding_window ~block_size ~tokenize ~device:c names
+  Dataset.sliding_window ~block_size ~tokenize names
   |> Dataset.batch batch_size
   |> Dataset.shuffle ~buffer_size:200
 
@@ -89,7 +89,7 @@ let build_gpt2_decoder ~vocab_size ~block_size ~n_layer ~n_head ~n_embd :
       ln_f;
       (* take last time step: [B;T;C] → [B;C] *)
       {
-        init = (fun ~rngs:_ ~device:_ ~dtype:_ -> List []);
+        init = (fun ~rngs:_ ~dtype:_ -> List []);
         apply =
           (fun _ ~training:_ ?rngs:_ x ->
             let t = (Rune.shape x).(1) in
@@ -103,7 +103,7 @@ let train ~model ~train_data ~val_data ~epochs ~lr ~weight_decay =
   let state, _history =
     Kaun.Training.fit ~model ~optimizer
       ~loss_fn:Loss.softmax_cross_entropy_with_indices ~train_data ~val_data
-      ~epochs ~progress:true ~rngs:(Rng.key 42) ~device:c ~dtype:float32 ()
+      ~epochs ~progress:true ~rngs:(Rng.key 42) ~dtype:float32 ()
   in
   state
 
@@ -128,7 +128,7 @@ let model_fn_of_decoder ~model ~params ~(v : vocab) ~block_size
   let take = Stdlib.min (length arr) block_size in
   blit arr (Stdlib.max 0 (length arr - take)) ctx (block_size - take) take;
   let input =
-    Rune.create c float32 [| 1; block_size |] (Array.map float_of_int ctx)
+    Rune.create float32 [| 1; block_size |] (Array.map float_of_int ctx)
   in
   model.Layer.apply params ~training:false input |> to_array
 
@@ -179,10 +179,14 @@ let () =
   let v = build_vocab names in
   let train_names, eval_names = split_names_for_eval names in
 
+  Printf.printf "1\n%!";
+
   (* Dataset *)
   let block_size = 16 and batch_size = 256 in
   let train_ds = make_dataset ~block_size ~batch_size ~v train_names in
   let eval_ds = make_dataset ~block_size ~batch_size ~v eval_names in
+
+  Printf.printf "2\n%!";
 
   (* Model: small GPT-2 decoder *)
   let model =
@@ -190,11 +194,16 @@ let () =
       ~n_embd:64
   in
 
+  Printf.printf "3\n%!";
+
   (* Train + evaluate *)
   let state =
     train ~model ~train_data:train_ds ~val_data:eval_ds ~epochs:1 ~lr:2e-3
       ~weight_decay:0.01
   in
+
+  Printf.printf "4\n%!";
+
   Dataset.reset eval_ds;
   let nll = eval_nll ~state ~val_data:eval_ds in
   Printf.printf "[transformer] Eval NLL: %.4f nats, PPL: %.2f\n%!" nll
@@ -205,4 +214,7 @@ let () =
     model_fn_of_decoder ~model ~params:state.Training.State.params ~v
       ~block_size
   in
+
+  Printf.printf "5\n%!";
+
   print_generated_names ~model_fn ~v ~num:10 ~max_new:30

@@ -37,7 +37,7 @@ let build_vocab (names : string list) : vocab =
 (* Build a dataset of (context, next) pairs using the high-level API. *)
 let make_dataset ~block_size ~batch_size ~(v : vocab) names =
   let tokenize s = v.encode ("." ^ s ^ ".") in
-  Dataset.sliding_window ~block_size ~tokenize ~device:c names
+  Dataset.sliding_window ~block_size ~tokenize names
   |> Dataset.batch batch_size
   |> Dataset.shuffle ~buffer_size:200
 
@@ -84,7 +84,7 @@ let train ~model ~train_data ~val_data ~epochs ~lr ~weight_decay =
   let state, _history =
     Kaun.Training.fit ~model ~optimizer
       ~loss_fn:Loss.softmax_cross_entropy_with_indices ~train_data ~val_data
-      ~epochs ~progress:true ~rngs:(Rng.key 42) ~device:c ~dtype:float32 ()
+      ~epochs ~progress:true ~rngs:(Rng.key 42) ~dtype:float32 ()
   in
   state
 
@@ -109,7 +109,7 @@ let model_fn_of_mlp ~model ~params ~(v : vocab) ~block_size (tokens : int list)
   let take = Stdlib.min (length arr) block_size in
   blit arr (Stdlib.max 0 (length arr - take)) ctx (block_size - take) take;
   let input =
-    Rune.create c float32 [| 1; block_size |] (Array.map float_of_int ctx)
+    Rune.create float32 [| 1; block_size |] (Array.map float_of_int ctx)
   in
   model.Layer.apply params ~training:false input |> to_array
 

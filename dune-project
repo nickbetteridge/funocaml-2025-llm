@@ -3,30 +3,30 @@
 (name funocaml_2025_llm)
 
 (source
- (github raven-ml/funocaml-2025-llm))
+ (github nickbetteridge/funocaml-2025-llm))
 
 (pin
- (url git+https://github.com/raven-ml/raven)
+ (url git+https://github.com/nickbetteridge/raven)
  (package
   (name nx)))
 
 (pin
- (url git+https://github.com/raven-ml/raven)
+ (url git+https://github.com/nickbetteridge/raven)
  (package
   (name nx-datasets)))
 
 (pin
- (url git+https://github.com/raven-ml/raven)
+ (url git+https://github.com/nickbetteridge/raven)
  (package
   (name rune)))
 
 (pin
- (url git+https://github.com/raven-ml/raven)
+ (url git+https://github.com/nickbetteridge/raven)
  (package
   (name saga)))
 
 (pin
- (url git+https://github.com/raven-ml/raven)
+ (url git+https://github.com/nickbetteridge/raven)
  (package
   (name kaun)))
 
